@@ -1,0 +1,5 @@
+gnome-shell-extension-applications-menu (0.2.3-0) unstable; urgency=low
+
+    * Rebased from upstream version 'gnome-shell-frippery-0.2.3.tgz'
+
+ -- Roberto C. Morano <rcmorano@emergya.es>  Thu, 08 Jul 2011 10:43:12 +0200
