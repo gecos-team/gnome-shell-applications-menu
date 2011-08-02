@@ -1,3 +1,9 @@
+gnome-shell-extension-applications-menu (0.2.3-0gecos1) natty; urgency=low
+
+    * Added GECOS version
+
+ -- Roberto C. Morano <rcmorano@emergya.es>  Tue, 02 Aug 2011 13:01:23 +0200
+
 gnome-shell-extension-applications-menu (0.2.3-0) unstable; urgency=low
 
     * Rebased from upstream version 'gnome-shell-frippery-0.2.3.tgz'
