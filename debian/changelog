@@ -1,5 +1,6 @@
-gnome-shell-extension-applications-menu (0.2.3-0gecos1) natty; urgency=low
+gnome-shell-extension-applications-menu (0.2.3-0gecos2) natty; urgency=low
 
+    * Patched to sync with GECOS trunk version
     * Added GECOS version
 
  -- Roberto C. Morano <rcmorano@emergya.es>  Tue, 02 Aug 2011 13:01:23 +0200
