@@ -90,7 +90,6 @@ ApplicationsMenuButton.prototype = {
 
         for ( let i=0; i<sections.length; ++i ) {
         
-            //let submenu = new PopupMenu.PopupSubMenuMenuItem(sections[i]);
             let submenu = createPopupSubMenuMenuItem(sections[i]);
             this.menu.addMenuItem(submenu);
 
@@ -317,13 +316,4 @@ function main(extensionMeta) {
 
     Main.panel._leftBox.insert_actor(button.actor, 0);
     Main.panel._menus.addMenu(button.menu);
-
-    // Synchronize the button's pseudo classes with its corner
-    button.actor.connect('style-changed', Lang.bind(this,
-        function(actor) {
-            let rtl = actor.get_direction() == St.TextDirection.RTL;
-            let corner = rtl ? Main.panel._rightCorner : Main.panel._leftCorner;
-            let pseudoClass = actor.get_style_pseudo_class();
-            corner.actor.set_style_pseudo_class(pseudoClass);
-        }));
 }
