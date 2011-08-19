@@ -165,6 +165,7 @@ function createSessionItems(menu) {
     removeStatusMenu();
     
     let statusmenu = Main.panel._statusmenu;
+    let item = null;
 
     item = new PopupMenu.PopupSeparatorMenuItem();
     menu.addMenuItem(item);
