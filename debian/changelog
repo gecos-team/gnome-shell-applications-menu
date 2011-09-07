@@ -1,3 +1,9 @@
+gnome-shell-extension-applications-menu (0.2.4-0gecos2) natty; urgency=low
+
+  * Added localization
+
+ -- Antonio Hernández <ahernandez@emergya.com>  Wed, 07 Sep 2011 14:45:43 +0200
+
 gnome-shell-extension-applications-menu (0.2.3-0gecos2) natty; urgency=low
 
     * Patched to sync with GECOS trunk version
