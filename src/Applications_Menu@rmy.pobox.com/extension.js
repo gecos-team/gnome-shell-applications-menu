@@ -13,8 +13,8 @@ const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 const EndSessionDialog = imports.ui.endSessionDialog;
 
-const Gettext = imports.gettext.domain('gnome-shell');
-const _ = Gettext.gettext;
+const Gettext = imports.gettext;
+const _ = Gettext.domain('gnome-shell').gettext;
 
 const BUS_NAME = 'org.gnome.ScreenSaver';
 const OBJECT_PATH = '/org/gnome/ScreenSaver';
@@ -29,9 +29,8 @@ const ScreenSaverInterface = {
     methods: [ { name: 'Lock', inSignature: '' } ]
 };
 
-// _("Menu") ?
-const BUTTON_LABEL = "Men\u00FA";
 
+let _f = null;
 let lastOpened = null;
 
 function ApplicationMenuItem() {
@@ -73,7 +72,7 @@ ApplicationsMenuButton.prototype = {
     _init: function(path) {
         this._path = path;
         PanelMenu.Button.prototype._init.call(this, 0.0);
-        let label = new St.Label({ text: BUTTON_LABEL });
+        let label = new St.Label({ text: _f("Menu") });
         this.actor.set_child(label);
 
         this._buildMenu();
@@ -309,6 +308,10 @@ function removeStatusMenu() {
 }
 
 function main(extensionMeta) {
+    
+    let localePath = extensionMeta.path + '/locale';
+    Gettext.bindtextdomain('applications-menu', localePath);
+    _f = Gettext.domain('applications-menu').gettext;
     
     let children = Main.panel._leftBox.get_children();
     Main.panel._leftBox.remove_actor(children[0]);
