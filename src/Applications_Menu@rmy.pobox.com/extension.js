@@ -134,7 +134,7 @@ function createPopupSubMenuMenuItem(label) {
 
     let submenu = new PopupMenu.PopupSubMenuMenuItem(label);
     
-    submenu.menu.open = Lang.bind(submenu.menu, function(animate) {
+    /*submenu.menu.open = Lang.bind(submenu.menu, function(animate) {
         if (lastOpened && lastOpened.isOpen) {
             lastOpened.close(true);
         }
@@ -144,7 +144,7 @@ function createPopupSubMenuMenuItem(label) {
         } catch(e) {
             global.logError(e);
         }
-    });
+    });*/
     
     submenu.menu._needsScrollbar = Lang.bind(submenu.menu, function() {
         let items = this._getMenuItems();
