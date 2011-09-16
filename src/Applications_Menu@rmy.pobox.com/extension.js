@@ -1,11 +1,11 @@
 
-const Gdm = imports.gi.Gdm;
 const DBus = imports.dbus;
 const Gio = imports.gi.Gio;
 const Lang = imports.lang;
 const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
+const GMenu = imports.gi.GMenu;
 
 const GnomeSession = imports.misc.gnomeSession;
 const Main = imports.ui.main;
@@ -32,6 +32,67 @@ const ScreenSaverInterface = {
 
 let _f = null;
 let lastOpened = null;
+
+
+function AppViewByCategories(showAll) {
+    this._init.apply(this, arguments);
+}
+
+AppViewByCategories.prototype = {
+    _init: function(showAll) {
+        this._showAll = typeof(showAll) == 'boolean' ? showAll : false;
+        this._categories = [];
+        this._applications = {};
+        this._appSystem = Shell.AppSystem.get_default();
+        this._load_categories();
+    },
+    
+    get_categories: function() {
+        return this._categories;
+    },
+    
+    get_applications: function(category) {
+        return this._applications[category];
+    },
+    
+    _load_categories: function() {
+    
+        var tree = this._appSystem.get_tree();
+        var root = tree.get_root_directory();
+
+        var iter = root.iter();
+        var nextType;
+        
+        while ((nextType = iter.next()) != GMenu.TreeItemType.INVALID) {
+            if (nextType == GMenu.TreeItemType.DIRECTORY) {
+                var appList = [];
+                var dir = iter.get_directory();
+                this._load_applications(dir, appList);
+                
+                this._categories.push(dir.get_name());
+                this._applications[dir.get_name()] = appList;
+            }
+        }
+    },
+    
+    _load_applications: function(dir, appList) {
+    
+        var iter = dir.iter();
+        var nextType;
+        
+        while ((nextType = iter.next()) != GMenu.TreeItemType.INVALID) {
+            if (nextType == GMenu.TreeItemType.ENTRY) {
+                var entry = iter.get_entry();
+                var app = this._appSystem.lookup_app_by_tree_entry(entry);
+                if (this._showAll == true || !entry.get_app_info().get_nodisplay())
+                    appList.push(app);
+            } else if (nextType == GMenu.TreeItemType.DIRECTORY) {
+                this._load_applications(iter.get_directory());
+            }
+        }
+    }
+};
+
 
 function ApplicationMenuItem() {
     this._init.apply(this, arguments);
@@ -84,27 +145,27 @@ ApplicationsMenuButton.prototype = {
     },
 
     _buildMenu: function() {
-        let appSystem = Shell.AppSystem.get_default();
-        let sections = appSystem.get_sections();
-
-        for ( let i=0; i<sections.length; ++i ) {
+    
+        var v = new AppViewByCategories(false);
+        var categories = v.get_categories();
         
-            let submenu = createPopupSubMenuMenuItem(sections[i]);
+        for (var i=0, cl=categories.length; i<cl; i++) {
+        
+            var category = categories[i];
+            var apps = v.get_applications(category);
+            
+            var submenu = createPopupSubMenuMenuItem(category);
             this.menu.addMenuItem(submenu);
-
-            let apps = appSystem.get_flattened_apps().filter(function(app) {
-                           return !app.get_is_nodisplay() &&
-                               sections[i] == app.get_section();
-                       });
-
-            for ( let j=0; j<apps.length; ++j ) {
-                let menuItem = new ApplicationMenuItem(apps[j]);
-
+            
+            for (var j=0, al=apps.length; j<al; j++) {
+            
+                var app = apps[j];
+                var menuItem = new ApplicationMenuItem(app);
                 submenu.menu.addMenuItem(menuItem, 0);
             }
         }
 
-        createSessionItems(this.menu);
+        //createSessionItems(this.menu);
     },
 
     _rebuildMenu: function() {
@@ -117,12 +178,7 @@ ApplicationsMenuButton.prototype = {
         let dir = Gio.file_new_for_path(this._path);
         let stylesheetFile = dir.get_child('stylesheet.css');
         if (stylesheetFile.query_exists(null)) {
-            try {
-                theme.load_stylesheet(stylesheetFile.get_path());
-            } catch (e) {
-                global.logError(baseErrorString + 'Stylesheet parse error: ' + e);
-                return;
-            }
+            theme.load_stylesheet(stylesheetFile.get_path());
         }
     }
 };
@@ -304,7 +360,7 @@ function updateEndSessionDialog() {
  * other extensions or methods could be using it, included this one.
  */
 function removeStatusMenu() {
-    Main.panel._rightBox.remove_actor(Main.panel._statusmenu.actor);
+    Main.panel._rightBox.remove_actor(Main.panel._userMenu.actor);
 }
 
 function main(extensionMeta) {
@@ -317,7 +373,17 @@ function main(extensionMeta) {
     Main.panel._leftBox.remove_actor(children[0]);
 
     let button = new ApplicationsMenuButton(extensionMeta.path);
-
     Main.panel._leftBox.insert_actor(button.actor, 0);
     Main.panel._menus.addMenu(button.menu);
 }
+
+function init(meta) {
+    main(meta);
+}
+
+function enable() {
+}
+
+function disable() {
+}
+
