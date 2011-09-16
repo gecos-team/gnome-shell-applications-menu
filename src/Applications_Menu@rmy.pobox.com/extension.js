@@ -148,7 +148,7 @@ ApplicationsMenuButton.prototype = {
     },
 
     _buildMenu: function() {
-    
+
         var v = new AppViewByCategories(false);
         var categories = v.get_categories();
         
@@ -376,7 +376,7 @@ function main(extensionMeta) {
     Main.panel._leftBox.insert_actor(button.actor, 0);
     Main.panel._menus.addMenu(button.menu);
     
-    Main.panel._leftBox.remove_actor(Main.panel._activitiesButton);
+    Main.panel._leftBox.remove_actor(Main.panel._activitiesButton.actor);
 }
 
 function init(meta) {
