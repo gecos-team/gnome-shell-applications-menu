@@ -120,7 +120,7 @@ ApplicationMenuItem.prototype = {
         this.app = app;
 
         this.connect('activate', Lang.bind(this, function() {
-            let app = Shell.AppSystem.get_default().get_app(this.app.get_id());
+            let app = Shell.AppSystem.get_default().lookup_app(this.app.get_id());
             app.open_new_window(-1);
         }));
     }
