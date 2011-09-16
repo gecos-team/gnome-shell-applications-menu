@@ -168,7 +168,7 @@ ApplicationsMenuButton.prototype = {
             }
         }
 
-        //createSessionItems(this.menu);
+        createSessionItems(this.menu);
     },
 
     _rebuildMenu: function() {
@@ -220,31 +220,31 @@ function createSessionItems(menu) {
 
     updateShutdownMenuItem();
     updateEndSessionDialog();
-    removeStatusMenu();
+    removeUserMenu();
     
-    let statusmenu = Main.panel._statusmenu;
+    let userMenu = Main.panel._userMenu;
     let item = null;
 
     item = new PopupMenu.PopupSeparatorMenuItem();
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Lock Screen"));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onLockScreenActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onLockScreenActivate));
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Switch User"));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onLoginScreenActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onLoginScreenActivate));
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Log Out..."));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onQuitSessionActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onQuitSessionActivate));
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupSeparatorMenuItem();
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Power Off..."));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onSuspendOrPowerOffActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onSuspendOrPowerOffActivate));
     menu.addMenuItem(item);
 }
 
@@ -253,12 +253,12 @@ function createSessionItems(menu) {
  */
 function updateShutdownMenuItem() {
 
-    Main.panel._statusmenu._updateSuspendOrPowerOff = function() {
+    Main.panel._userMenu._updateSuspendOrPowerOff = function() {
         this._haveSuspend = false;
         this._suspendOrPowerOffItem.updateText(_("Power Off..."), null);
     }
 
-    Main.panel._statusmenu._updateSuspendOrPowerOff();
+    Main.panel._userMenu._updateSuspendOrPowerOff();
 }
 
 /**
@@ -312,8 +312,8 @@ function updateEndSessionDialog() {
     EndSessionDialog.EndSessionDialog.prototype._updateButtons = function() {
         let dialogContent = EndSessionDialog.DialogContent[this._type];
         let buttons = [];
-        this._upClient = Main.panel._statusmenu._upClient;
-        this._screenSaverProxy = Main.panel._statusmenu._screenSaverProxy;
+        this._upClient = Main.panel._userMenu._upClient;
+        this._screenSaverProxy = Main.panel._userMenu._screenSaverProxy;
 
         if ( dialogContent.secondaryButtons ) {
             for (let i = 0; i < dialogContent.secondaryButtons.length; i++) {
@@ -359,10 +359,10 @@ function updateEndSessionDialog() {
 }
 
 /**
- * Remove the StatusMenu from the panel but leave the instance because
+ * Remove the UserMenu from the panel but leave the instance because
  * other extensions or methods could be using it, included this one.
  */
-function removeStatusMenu() {
+function removeUserMenu() {
     Main.panel._rightBox.remove_actor(Main.panel._userMenu.actor);
 }
 
