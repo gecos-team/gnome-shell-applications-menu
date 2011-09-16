@@ -34,6 +34,9 @@ let _f = null;
 let lastOpened = null;
 
 
+/**
+ * Retrieve the installed applications by categories.
+ */
 function AppViewByCategories(showAll) {
     this._init.apply(this, arguments);
 }
@@ -369,12 +372,11 @@ function main(extensionMeta) {
     Gettext.bindtextdomain('applications-menu', localePath);
     _f = Gettext.domain('applications-menu').gettext;
     
-    let children = Main.panel._leftBox.get_children();
-    Main.panel._leftBox.remove_actor(children[0]);
-
     let button = new ApplicationsMenuButton(extensionMeta.path);
     Main.panel._leftBox.insert_actor(button.actor, 0);
     Main.panel._menus.addMenu(button.menu);
+    
+    Main.panel._leftBox.remove_actor(Main.panel._activitiesButton);
 }
 
 function init(meta) {
