@@ -29,13 +29,87 @@ const ScreenSaverInterface = {
     methods: [ { name: 'Lock', inSignature: '' } ]
 };
 
-
 let _f = null;
 let lastOpened = null;
 
 
 /**
+ * AppSystem wrapper.
+ * Note the Shell.AppSystem API has been changed since GnomeShell 3.1.90.1
+ */
+function AppSystemWrapper() {
+    this._init.apply(this, arguments);
+}
+
+AppSystemWrapper.prototype = {
+    _init: function() {
+        this._appSystem = Shell.AppSystem.get_default();
+    },
+    connect: function(event, callback) {
+        return this._appSystem.connect(event, callback);
+    },
+    get_tree: function() {
+        return this._appSystem.get_tree();
+    },
+    lookup_app_by_tree_entry: function(entry) {
+        return this._appSystem.lookup_app_by_tree_entry(entry);
+    },
+    lookup_app: function(appId) {
+        return this._appSystem.lookup_app(appId);
+    },
+    get_all: function() {
+        return this._appSystem.get_all();
+    }
+};
+
+var AppSystem = (function() {
+    var instance = null;
+    return {
+        get_default: function() {
+            if (instance == null)
+                instance = new AppSystemWrapper();
+            return instance;
+        }
+    };
+})();
+
+/**
+ * AppInfo wrapper.
+ * Note the Shell.AppInfo API has been changed since GnomeShell 3.1.90.1
+ */
+function AppInfoWrapper(app) {
+    this._init.apply(this, arguments);
+}
+
+AppInfoWrapper.prototype = {
+    _init: function(app) {
+        this._app = app;
+    },
+    get_id: function() {
+        return this._app.get_id();
+    },
+    get_name: function() {
+        return this._app.get_name();
+    },
+    open_new_window: function(param) {
+        return this._app.open_new_window(param);
+    },
+    get_section: function() {
+        //return this._app.get_section();
+    },
+    get_nodisplay: function() {
+        return this._app.get_nodisplay();
+    },
+    create_icon_texture: function(size) {
+        return this._app.create_icon_texture(size);
+    }
+};
+
+
+/**
  * Retrieve the installed applications by categories.
+ * @param boolean showAll Retrieve all applications or those without the
+ *                        "nodisplay" flag.
  */
 function AppViewByCategories(showAll) {
     this._init.apply(this, arguments);
@@ -46,7 +120,7 @@ AppViewByCategories.prototype = {
         this._showAll = typeof(showAll) == 'boolean' ? showAll : false;
         this._categories = [];
         this._applications = {};
-        this._appSystem = Shell.AppSystem.get_default();
+        this._appSystem = AppSystem.get_default();
         this._load_categories();
     },
     
@@ -78,7 +152,7 @@ AppViewByCategories.prototype = {
         }
     },
     
-    _load_applications: function(dir, appList) {
+    _load_applications: function(category, appList) {
     
         var iter = dir.iter();
         var nextType;
@@ -87,7 +161,9 @@ AppViewByCategories.prototype = {
             if (nextType == GMenu.TreeItemType.ENTRY) {
                 var entry = iter.get_entry();
                 var app = this._appSystem.lookup_app_by_tree_entry(entry);
-                if (this._showAll == true || !entry.get_app_info().get_nodisplay())
+                app = new AppInfoWrapper(app);
+                //if (this._showAll == true || !entry.get_app_info().get_nodisplay())
+                if (this._showAll == true || !app.get_nodisplay())
                     appList.push(app);
             } else if (nextType == GMenu.TreeItemType.DIRECTORY) {
                 this._load_applications(iter.get_directory());
@@ -97,6 +173,10 @@ AppViewByCategories.prototype = {
 };
 
 
+/**
+ * A menu item that represents an application.
+ * @param AppInfo app An AppInfo object.
+ */
 function ApplicationMenuItem() {
     this._init.apply(this, arguments);
 }
@@ -120,7 +200,7 @@ ApplicationMenuItem.prototype = {
         this.app = app;
 
         this.connect('activate', Lang.bind(this, function() {
-            let app = Shell.AppSystem.get_default().lookup_app(this.app.get_id());
+            let app = AppSystem.get_default().lookup_app(this.app.get_id());
             app.open_new_window(-1);
         }));
     }
@@ -141,7 +221,7 @@ ApplicationsMenuButton.prototype = {
 
         this._buildMenu();
 
-        Shell.AppSystem.get_default().connect('installed-changed', Lang.bind(this, this._rebuildMenu));
+        AppSystem.get_default().connect('installed-changed', Lang.bind(this, this._rebuildMenu));
 
         let themeContext = St.ThemeContext.get_for_stage(global.stage);
         themeContext.connect('changed', Lang.bind(this, this._themeChanged));
@@ -157,7 +237,7 @@ ApplicationsMenuButton.prototype = {
             var category = categories[i];
             var apps = v.get_applications(category);
             
-            var submenu = createPopupSubMenuMenuItem(category);
+            var submenu = new PopupMenu.PopupSubMenuMenuItem(category);
             this.menu.addMenuItem(submenu);
             
             for (var j=0, al=apps.length; j<al; j++) {
@@ -180,37 +260,16 @@ ApplicationsMenuButton.prototype = {
         let theme = themeContext.get_theme();
         let dir = Gio.file_new_for_path(this._path);
         let stylesheetFile = dir.get_child('stylesheet.css');
-        if (stylesheetFile.query_exists(null)) {
+        if (stylesheetFile.query_exists(null))
             theme.load_stylesheet(stylesheetFile.get_path());
-        }
     }
 };
 
 /**
- * Hide the last application menu section before open other section.
+ * Return the User menu object.
  */
-function createPopupSubMenuMenuItem(label) {
-
-    let submenu = new PopupMenu.PopupSubMenuMenuItem(label);
-    
-    /*submenu.menu.open = Lang.bind(submenu.menu, function(animate) {
-        if (lastOpened && lastOpened.isOpen) {
-            lastOpened.close(true);
-        }
-        lastOpened = this;
-        try {
-            this.__proto__.open.call(this, animate);
-        } catch(e) {
-            global.logError(e);
-        }
-    });*/
-    
-    submenu.menu._needsScrollbar = Lang.bind(submenu.menu, function() {
-        let items = this._getMenuItems();
-        return items.length > 10;
-    });
-    
-    return submenu;
+function getUserMenu() {
+    return Main.panel._userMenu;
 }
 
 /**
