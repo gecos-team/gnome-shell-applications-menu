@@ -60,7 +60,7 @@ AppSystemWrapper.prototype = {
     get_all: function() {
         return this._appSystem.get_flattened_apps();
     }
-}
+};
 
 var AppSystem = (function() {
     var instance = null;
@@ -103,7 +103,7 @@ AppInfoWrapper.prototype = {
     create_icon_texture: function(size) {
         return this._app.create_icon_texture(size);
     }
-}
+};
 
 
 /**
@@ -252,37 +252,52 @@ ApplicationsMenuButton.prototype = {
 };
 
 /**
+ * Returns the user menu object.
+ */
+function getUserMenu() {
+    return Main.panel._statusmenu;
+}
+
+/**
+ * Returns the activities button.
+ */
+function getActivitiesButton() {
+    let children = Main.panel._leftBox.get_children();
+    return {actor: children[0]};
+}
+
+/**
  * Add session options to the applications menu.
  */
 function createSessionItems(menu) {
 
     updateShutdownMenuItem();
     updateEndSessionDialog();
-    removeStatusMenu();
+    removeUserMenu();
     
-    let statusmenu = Main.panel._statusmenu;
+    let userMenu = getUserMenu();
     let item = null;
 
     item = new PopupMenu.PopupSeparatorMenuItem();
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Lock Screen"));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onLockScreenActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onLockScreenActivate));
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Switch User"));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onLoginScreenActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onLoginScreenActivate));
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Log Out..."));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onQuitSessionActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onQuitSessionActivate));
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupSeparatorMenuItem();
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Power Off..."));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onSuspendOrPowerOffActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onSuspendOrPowerOffActivate));
     menu.addMenuItem(item);
 }
 
@@ -291,12 +306,12 @@ function createSessionItems(menu) {
  */
 function updateShutdownMenuItem() {
 
-    Main.panel._statusmenu._updateSuspendOrPowerOff = function() {
+    getUserMenu()._updateSuspendOrPowerOff = function() {
         this._haveSuspend = false;
         this._suspendOrPowerOffItem.updateText(_("Power Off..."), null);
     }
 
-    Main.panel._statusmenu._updateSuspendOrPowerOff();
+    getUserMenu()._updateSuspendOrPowerOff();
 }
 
 /**
@@ -350,8 +365,8 @@ function updateEndSessionDialog() {
     EndSessionDialog.EndSessionDialog.prototype._updateButtons = function() {
         let dialogContent = EndSessionDialog.DialogContent[this._type];
         let buttons = [];
-        this._upClient = Main.panel._statusmenu._upClient;
-        this._screenSaverProxy = Main.panel._statusmenu._screenSaverProxy;
+        this._upClient = getUserMenu()._upClient;
+        this._screenSaverProxy = getUserMenu()._screenSaverProxy;
 
         if ( dialogContent.secondaryButtons ) {
             for (let i = 0; i < dialogContent.secondaryButtons.length; i++) {
@@ -397,11 +412,11 @@ function updateEndSessionDialog() {
 }
 
 /**
- * Remove the StatusMenu from the panel but leave the instance because
+ * Remove the UserMenu from the panel but leave the instance because
  * other extensions or methods could be using it, included this one.
  */
-function removeStatusMenu() {
-    Main.panel._rightBox.remove_actor(Main.panel._statusmenu.actor);
+function removeUserMenu() {
+    Main.panel._rightBox.remove_actor(getUserMenu().actor);
 }
 
 function main(meta) {
@@ -410,11 +425,9 @@ function main(meta) {
     Gettext.bindtextdomain('applications-menu', localePath);
     _f = Gettext.domain('applications-menu').gettext;
     
-    let children = Main.panel._leftBox.get_children();
-    Main.panel._leftBox.remove_actor(children[0]);
-
+    Main.panel._leftBox.remove_actor(getActivitiesButton().actor);
+    
     let button = new ApplicationsMenuButton(meta.path);
-
     Main.panel._leftBox.insert_actor(button.actor, 0);
     Main.panel._menus.addMenu(button.menu);
 }
