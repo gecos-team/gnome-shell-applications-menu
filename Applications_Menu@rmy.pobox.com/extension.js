@@ -266,10 +266,17 @@ ApplicationsMenuButton.prototype = {
 };
 
 /**
- * Return the User menu object.
+ * Return the user menu object.
  */
 function getUserMenu() {
     return Main.panel._userMenu;
+}
+
+/**
+ * Returns the activities button.
+ */
+function getActivitiesButton() {
+    return Main.panel._activitiesButton;
 }
 
 /**
@@ -431,11 +438,11 @@ function main(meta) {
     Gettext.bindtextdomain('applications-menu', localePath);
     _f = Gettext.domain('applications-menu').gettext;
     
+    Main.panel._leftBox.remove_actor(getActivitiesButton().actor);
+    
     let button = new ApplicationsMenuButton(meta.path);
     Main.panel._leftBox.insert_actor(button.actor, 0);
     Main.panel._menus.addMenu(button.menu);
-    
-    Main.panel._leftBox.remove_actor(Main.panel._activitiesButton.actor);
 }
 
 function init(meta) {
