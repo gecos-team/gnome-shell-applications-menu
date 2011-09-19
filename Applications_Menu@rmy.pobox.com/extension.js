@@ -281,7 +281,7 @@ function createSessionItems(menu) {
     updateEndSessionDialog();
     removeUserMenu();
     
-    let userMenu = Main.panel._userMenu;
+    let userMenu = getUserMenu();
     let item = null;
 
     item = new PopupMenu.PopupSeparatorMenuItem();
@@ -312,12 +312,12 @@ function createSessionItems(menu) {
  */
 function updateShutdownMenuItem() {
 
-    Main.panel._userMenu._updateSuspendOrPowerOff = function() {
+    getUserMenu()._updateSuspendOrPowerOff = function() {
         this._haveSuspend = false;
         this._suspendOrPowerOffItem.updateText(_("Power Off..."), null);
     }
 
-    Main.panel._userMenu._updateSuspendOrPowerOff();
+    getUserMenu()._updateSuspendOrPowerOff();
 }
 
 /**
@@ -371,8 +371,8 @@ function updateEndSessionDialog() {
     EndSessionDialog.EndSessionDialog.prototype._updateButtons = function() {
         let dialogContent = EndSessionDialog.DialogContent[this._type];
         let buttons = [];
-        this._upClient = Main.panel._userMenu._upClient;
-        this._screenSaverProxy = Main.panel._userMenu._screenSaverProxy;
+        this._upClient = getUserMenu()._upClient;
+        this._screenSaverProxy = getUserMenu()._screenSaverProxy;
 
         if ( dialogContent.secondaryButtons ) {
             for (let i = 0; i < dialogContent.secondaryButtons.length; i++) {
@@ -422,16 +422,16 @@ function updateEndSessionDialog() {
  * other extensions or methods could be using it, included this one.
  */
 function removeUserMenu() {
-    Main.panel._rightBox.remove_actor(Main.panel._userMenu.actor);
+    Main.panel._rightBox.remove_actor(getUserMenu().actor);
 }
 
-function main(extensionMeta) {
+function main(meta) {
     
-    let localePath = extensionMeta.path + '/locale';
+    let localePath = meta.path + '/locale';
     Gettext.bindtextdomain('applications-menu', localePath);
     _f = Gettext.domain('applications-menu').gettext;
     
-    let button = new ApplicationsMenuButton(extensionMeta.path);
+    let button = new ApplicationsMenuButton(meta.path);
     Main.panel._leftBox.insert_actor(button.actor, 0);
     Main.panel._menus.addMenu(button.menu);
     
@@ -447,4 +447,3 @@ function enable() {
 
 function disable() {
 }
-
