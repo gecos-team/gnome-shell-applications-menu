@@ -1,11 +1,11 @@
 
-const Gdm = imports.gi.Gdm;
 const DBus = imports.dbus;
 const Gio = imports.gi.Gio;
 const Lang = imports.lang;
 const Shell = imports.gi.Shell;
 const St = imports.gi.St;
 const Clutter = imports.gi.Clutter;
+const GMenu = imports.gi.GMenu;
 
 const GnomeSession = imports.misc.gnomeSession;
 const Main = imports.ui.main;
@@ -29,10 +29,154 @@ const ScreenSaverInterface = {
     methods: [ { name: 'Lock', inSignature: '' } ]
 };
 
-
 let _f = null;
 let lastOpened = null;
 
+
+/**
+ * AppSystem wrapper.
+ * Note the Shell.AppSystem API has been changed since GnomeShell 3.1.90.1
+ */
+function AppSystemWrapper() {
+    this._init.apply(this, arguments);
+}
+
+AppSystemWrapper.prototype = {
+    _init: function() {
+        this._appSystem = Shell.AppSystem.get_default();
+    },
+    connect: function(event, callback) {
+        return this._appSystem.connect(event, callback);
+    },
+    get_tree: function() {
+        return this._appSystem.get_tree();
+    },
+    lookup_app_by_tree_entry: function(entry) {
+        return this._appSystem.lookup_app_by_tree_entry(entry);
+    },
+    lookup_app: function(appId) {
+        return this._appSystem.lookup_app(appId);
+    },
+    get_all: function() {
+        return this._appSystem.get_all();
+    }
+};
+
+var AppSystem = (function() {
+    var instance = null;
+    return {
+        get_default: function() {
+            if (instance == null)
+                instance = new AppSystemWrapper();
+            return instance;
+        }
+    };
+})();
+
+/**
+ * AppInfo wrapper.
+ * Note the Shell.AppInfo API has been changed since GnomeShell 3.1.90.1
+ */
+function AppInfoWrapper(app) {
+    this._init.apply(this, arguments);
+}
+
+AppInfoWrapper.prototype = {
+    _init: function(app) {
+        this._app = app;
+    },
+    get_id: function() {
+        return this._app.get_id();
+    },
+    get_name: function() {
+        return this._app.get_name();
+    },
+    open_new_window: function(param) {
+        return this._app.open_new_window(param);
+    },
+    get_section: function() {
+        //return this._app.get_section();
+    },
+    get_nodisplay: function() {
+        return this._app.get_nodisplay();
+    },
+    create_icon_texture: function(size) {
+        return this._app.create_icon_texture(size);
+    }
+};
+
+
+/**
+ * Retrieve the installed applications by categories.
+ * @param boolean showAll Retrieve all applications or those without the
+ *                        "nodisplay" flag.
+ */
+function AppViewByCategories(showAll) {
+    this._init.apply(this, arguments);
+}
+
+AppViewByCategories.prototype = {
+    _init: function(showAll) {
+        this._showAll = typeof(showAll) == 'boolean' ? showAll : false;
+        this._categories = [];
+        this._applications = {};
+        this._appSystem = AppSystem.get_default();
+        this._load_categories();
+    },
+    
+    get_categories: function() {
+        return this._categories;
+    },
+    
+    get_applications: function(category) {
+        return this._applications[category];
+    },
+    
+    _load_categories: function() {
+    
+        var tree = this._appSystem.get_tree();
+        var root = tree.get_root_directory();
+
+        var iter = root.iter();
+        var nextType;
+        
+        while ((nextType = iter.next()) != GMenu.TreeItemType.INVALID) {
+            if (nextType == GMenu.TreeItemType.DIRECTORY) {
+                var appList = [];
+                var dir = iter.get_directory();
+                this._load_applications(dir, appList);
+                
+                this._categories.push(dir.get_name());
+                this._applications[dir.get_name()] = appList;
+            }
+        }
+    },
+    
+    _load_applications: function(category, appList) {
+    
+        var iter = dir.iter();
+        var nextType;
+        
+        while ((nextType = iter.next()) != GMenu.TreeItemType.INVALID) {
+            if (nextType == GMenu.TreeItemType.ENTRY) {
+                var entry = iter.get_entry();
+                var app = this._appSystem.lookup_app_by_tree_entry(entry);
+                app = new AppInfoWrapper(app);
+                //if (this._showAll == true || !entry.get_app_info().get_nodisplay())
+                if (this._showAll == true || !app.get_nodisplay())
+                    appList.push(app);
+            } else if (nextType == GMenu.TreeItemType.DIRECTORY) {
+                this._load_applications(iter.get_directory());
+            }
+        }
+    }
+};
+
+
+/**
+ * A menu item that represents an application.
+ * @param AppInfo app An AppInfo object.
+ */
 function ApplicationMenuItem() {
     this._init.apply(this, arguments);
 }
@@ -56,7 +200,7 @@ ApplicationMenuItem.prototype = {
         this.app = app;
 
         this.connect('activate', Lang.bind(this, function() {
-            let app = Shell.AppSystem.get_default().get_app(this.app.get_id());
+            let app = AppSystem.get_default().lookup_app(this.app.get_id());
             app.open_new_window(-1);
         }));
     }
@@ -77,29 +221,29 @@ ApplicationsMenuButton.prototype = {
 
         this._buildMenu();
 
-        Shell.AppSystem.get_default().connect('installed-changed', Lang.bind(this, this._rebuildMenu));
+        AppSystem.get_default().connect('installed-changed', Lang.bind(this, this._rebuildMenu));
 
         let themeContext = St.ThemeContext.get_for_stage(global.stage);
         themeContext.connect('changed', Lang.bind(this, this._themeChanged));
     },
 
     _buildMenu: function() {
-        let appSystem = Shell.AppSystem.get_default();
-        let sections = appSystem.get_sections();
 
-        for ( let i=0; i<sections.length; ++i ) {
+        var v = new AppViewByCategories(false);
+        var categories = v.get_categories();
         
-            let submenu = createPopupSubMenuMenuItem(sections[i]);
+        for (var i=0, cl=categories.length; i<cl; i++) {
+        
+            var category = categories[i];
+            var apps = v.get_applications(category);
+            
+            var submenu = new PopupMenu.PopupSubMenuMenuItem(category);
             this.menu.addMenuItem(submenu);
-
-            let apps = appSystem.get_flattened_apps().filter(function(app) {
-                           return !app.get_is_nodisplay() &&
-                               sections[i] == app.get_section();
-                       });
-
-            for ( let j=0; j<apps.length; ++j ) {
-                let menuItem = new ApplicationMenuItem(apps[j]);
-
+            
+            for (var j=0, al=apps.length; j<al; j++) {
+            
+                var app = apps[j];
+                var menuItem = new ApplicationMenuItem(app);
                 submenu.menu.addMenuItem(menuItem, 0);
             }
         }
@@ -116,42 +260,23 @@ ApplicationsMenuButton.prototype = {
         let theme = themeContext.get_theme();
         let dir = Gio.file_new_for_path(this._path);
         let stylesheetFile = dir.get_child('stylesheet.css');
-        if (stylesheetFile.query_exists(null)) {
-            try {
-                theme.load_stylesheet(stylesheetFile.get_path());
-            } catch (e) {
-                global.logError(baseErrorString + 'Stylesheet parse error: ' + e);
-                return;
-            }
-        }
+        if (stylesheetFile.query_exists(null))
+            theme.load_stylesheet(stylesheetFile.get_path());
     }
 };
 
 /**
- * Hide the last application menu section before open other section.
+ * Return the user menu object.
  */
-function createPopupSubMenuMenuItem(label) {
+function getUserMenu() {
+    return Main.panel._userMenu;
+}
 
-    let submenu = new PopupMenu.PopupSubMenuMenuItem(label);
-    
-    /*submenu.menu.open = Lang.bind(submenu.menu, function(animate) {
-        if (lastOpened && lastOpened.isOpen) {
-            lastOpened.close(true);
-        }
-        lastOpened = this;
-        try {
-            this.__proto__.open.call(this, animate);
-        } catch(e) {
-            global.logError(e);
-        }
-    });*/
-    
-    submenu.menu._needsScrollbar = Lang.bind(submenu.menu, function() {
-        let items = this._getMenuItems();
-        return items.length > 10;
-    });
-    
-    return submenu;
+/**
+ * Returns the activities button.
+ */
+function getActivitiesButton() {
+    return Main.panel._activitiesButton;
 }
 
 /**
@@ -161,31 +286,31 @@ function createSessionItems(menu) {
 
     updateShutdownMenuItem();
     updateEndSessionDialog();
-    removeStatusMenu();
+    removeUserMenu();
     
-    let statusmenu = Main.panel._statusmenu;
+    let userMenu = getUserMenu();
     let item = null;
 
     item = new PopupMenu.PopupSeparatorMenuItem();
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Lock Screen"));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onLockScreenActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onLockScreenActivate));
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Switch User"));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onLoginScreenActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onLoginScreenActivate));
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Log Out..."));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onQuitSessionActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onQuitSessionActivate));
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupSeparatorMenuItem();
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Power Off..."));
-    item.connect('activate', Lang.bind(statusmenu, statusmenu._onSuspendOrPowerOffActivate));
+    item.connect('activate', Lang.bind(userMenu, userMenu._onSuspendOrPowerOffActivate));
     menu.addMenuItem(item);
 }
 
@@ -194,12 +319,12 @@ function createSessionItems(menu) {
  */
 function updateShutdownMenuItem() {
 
-    Main.panel._statusmenu._updateSuspendOrPowerOff = function() {
+    getUserMenu()._updateSuspendOrPowerOff = function() {
         this._haveSuspend = false;
         this._suspendOrPowerOffItem.updateText(_("Power Off..."), null);
     }
 
-    Main.panel._statusmenu._updateSuspendOrPowerOff();
+    getUserMenu()._updateSuspendOrPowerOff();
 }
 
 /**
@@ -253,8 +378,8 @@ function updateEndSessionDialog() {
     EndSessionDialog.EndSessionDialog.prototype._updateButtons = function() {
         let dialogContent = EndSessionDialog.DialogContent[this._type];
         let buttons = [];
-        this._upClient = Main.panel._statusmenu._upClient;
-        this._screenSaverProxy = Main.panel._statusmenu._screenSaverProxy;
+        this._upClient = getUserMenu()._upClient;
+        this._screenSaverProxy = getUserMenu()._screenSaverProxy;
 
         if ( dialogContent.secondaryButtons ) {
             for (let i = 0; i < dialogContent.secondaryButtons.length; i++) {
@@ -300,24 +425,32 @@ function updateEndSessionDialog() {
 }
 
 /**
- * Remove the StatusMenu from the panel but leave the instance because
+ * Remove the UserMenu from the panel but leave the instance because
  * other extensions or methods could be using it, included this one.
  */
-function removeStatusMenu() {
-    Main.panel._rightBox.remove_actor(Main.panel._statusmenu.actor);
+function removeUserMenu() {
+    Main.panel._rightBox.remove_actor(getUserMenu().actor);
 }
 
-function main(extensionMeta) {
+function main(meta) {
     
-    let localePath = extensionMeta.path + '/locale';
+    let localePath = meta.path + '/locale';
     Gettext.bindtextdomain('applications-menu', localePath);
     _f = Gettext.domain('applications-menu').gettext;
     
-    let children = Main.panel._leftBox.get_children();
-    Main.panel._leftBox.remove_actor(children[0]);
-
-    let button = new ApplicationsMenuButton(extensionMeta.path);
-
+    Main.panel._leftBox.remove_actor(getActivitiesButton().actor);
+    
+    let button = new ApplicationsMenuButton(meta.path);
     Main.panel._leftBox.insert_actor(button.actor, 0);
     Main.panel._menus.addMenu(button.menu);
+}
+
+function init(meta) {
+    main(meta);
+}
+
+function enable() {
+}
+
+function disable() {
 }
