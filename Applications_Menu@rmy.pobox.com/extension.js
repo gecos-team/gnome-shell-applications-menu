@@ -31,7 +31,7 @@ const ScreenSaverInterface = {
 
 let _f = null;
 let lastOpened = null;
-
+let userMenu = null;
 
 /**
  * AppSystem wrapper.
@@ -269,7 +269,21 @@ ApplicationsMenuButton.prototype = {
  * Return the user menu object.
  */
 function getUserMenu() {
-    return Main.panel._userMenu;
+
+    if (userMenu !== null)
+        return userMenu;
+
+    let indicator = Main.panel._statusArea['userMenu'];
+    let children = Main.panel._rightBox.get_children();
+
+    for (let i = children.length - 1; i >= 0; i--) {
+        if (indicator.actor === children[i]) {
+            userMenu = indicator;
+            break;
+        }
+    }
+
+    return userMenu;
 }
 
 /**
