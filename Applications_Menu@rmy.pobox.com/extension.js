@@ -333,10 +333,12 @@ function createSessionItems(menu) {
  */
 function updateShutdownMenuItem() {
 
-    getUserMenu()._updateSuspendOrPowerOff = function() {
+    getUserMenu()._updateSuspendOrPowerOff = Lang.bind(getUserMenu(), function() {
+        if (!this._suspendOrPowerOffItem)
+            return;
         this._haveSuspend = false;
         this._suspendOrPowerOffItem.updateText(_("Power Off..."), null);
-    }
+    });
 
     getUserMenu()._updateSuspendOrPowerOff();
 }
