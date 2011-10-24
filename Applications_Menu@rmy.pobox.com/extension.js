@@ -449,13 +449,13 @@ function removeUserMenu() {
 }
 
 function main(meta) {
-    
+
     let localePath = meta.path + '/locale';
     Gettext.bindtextdomain('applications-menu', localePath);
     _f = Gettext.domain('applications-menu').gettext;
-    
+
     Main.panel._leftBox.remove_actor(getActivitiesButton().actor);
-    
+
     let button = new ApplicationsMenuButton(meta.path);
     Main.panel._leftBox.insert_actor(button.actor, 0);
     Main.panel._menus.addMenu(button.menu);
