@@ -123,40 +123,40 @@ AppViewByCategories.prototype = {
         this._appSystem = AppSystem.get_default();
         this._load_categories();
     },
-    
+
     get_categories: function() {
         return this._categories;
     },
-    
+
     get_applications: function(category) {
         return this._applications[category];
     },
-    
+
     _load_categories: function() {
-    
+
         var tree = this._appSystem.get_tree();
         var root = tree.get_root_directory();
 
         var iter = root.iter();
         var nextType;
-        
+
         while ((nextType = iter.next()) != GMenu.TreeItemType.INVALID) {
             if (nextType == GMenu.TreeItemType.DIRECTORY) {
                 var appList = [];
                 var dir = iter.get_directory();
                 this._load_applications(dir, appList);
-                
+
                 this._categories.push(dir.get_name());
                 this._applications[dir.get_name()] = appList;
             }
         }
     },
-    
+
     _load_applications: function(category, appList) {
-    
+
         var iter = category.iter();
         var nextType;
-        
+
         while ((nextType = iter.next()) != GMenu.TreeItemType.INVALID) {
             if (nextType == GMenu.TreeItemType.ENTRY) {
                 var entry = iter.get_entry();
@@ -217,7 +217,7 @@ ApplicationsMenuButton.prototype = {
         this._path = path;
         PanelMenu.Button.prototype._init.call(this, 0.0);
         let label = new St.Label({ text: _f("Menu") });
-        this.actor.set_child(label);
+        this.actor.add_actor(label);
 
         this._buildMenu();
 
@@ -231,17 +231,17 @@ ApplicationsMenuButton.prototype = {
 
         var v = new AppViewByCategories(false);
         var categories = v.get_categories();
-        
+
         for (var i=0, cl=categories.length; i<cl; i++) {
-        
+
             var category = categories[i];
             var apps = v.get_applications(category);
-            
+
             var submenu = new PopupMenu.PopupSubMenuMenuItem(category);
             this.menu.addMenuItem(submenu);
-            
+
             for (var j=0, al=apps.length; j<al; j++) {
-            
+
                 var app = apps[j];
                 var menuItem = new ApplicationMenuItem(app);
                 submenu.menu.addMenuItem(menuItem, 0);
@@ -287,7 +287,7 @@ function createSessionItems(menu) {
     updateShutdownMenuItem();
     updateEndSessionDialog();
     removeUserMenu();
-    
+
     let userMenu = getUserMenu();
     let item = null;
 
