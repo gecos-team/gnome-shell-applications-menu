@@ -320,12 +320,49 @@ function createSessionItems(menu) {
     item.connect('activate', Lang.bind(userMenu, userMenu._onQuitSessionActivate));
     menu.addMenuItem(item);
 
+    // ------------------
+
+    item = new PopupMenu.PopupSeparatorMenuItem();
+    menu.addMenuItem(item);
+
+    item = new PopupMenu.PopupMenuItem(_("Notify"));
+    item.connect('activate', function() {
+        notify('Simple notification');
+    });
+    menu.addMenuItem(item);
+
+    item = new PopupMenu.PopupMenuItem(_("Notify transient"));
+    item.connect('activate', function() {
+        notify('Notification with body', 'The body\nThe body\nThe body\nThe body\nThe body\nThe body\n');
+    });
+    menu.addMenuItem(item);
+
+    item = new PopupMenu.PopupMenuItem(_("Notify non transient"));
+    item.connect('activate', function() {
+        notify('Non transient notification', 'The body\nThe body\nThe body\nThe body\nThe body\nThe body\n', false);
+    });
+    menu.addMenuItem(item);
+
+    // ------------------
+
+
     item = new PopupMenu.PopupSeparatorMenuItem();
     menu.addMenuItem(item);
 
     item = new PopupMenu.PopupMenuItem(_("Power Off..."));
     item.connect('activate', Lang.bind(userMenu, userMenu._onSuspendOrPowerOffActivate));
     menu.addMenuItem(item);
+}
+
+
+function notify(msg, details, isTransient) {
+    isTransient = typeof(isTransient) == 'boolean' ? isTransient : true;
+    let MessageTray = imports.ui.messageTray;
+    let source = new MessageTray.SystemNotificationSource();
+    Main.messageTray.add(source);
+    let notification = new MessageTray.Notification(source, msg, details);
+    notification.setTransient(isTransient);
+    source.notify(notification);
 }
 
 /**
