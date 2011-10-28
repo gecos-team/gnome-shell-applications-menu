@@ -163,7 +163,6 @@ AppViewByCategories.prototype = {
                 var app = this._appSystem.lookup_app_by_tree_entry(entry);
                 app = new AppInfoWrapper(app);
                 if (this._showAll == true || !entry.get_app_info().get_nodisplay())
-                //if (this._showAll == true || !app.get_nodisplay())
                     appList.push(app);
             } else if (nextType == GMenu.TreeItemType.DIRECTORY) {
                 this._load_applications(iter.get_directory());
