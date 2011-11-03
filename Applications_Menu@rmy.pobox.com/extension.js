@@ -213,8 +213,10 @@ ApplicationsMenuButton.prototype = {
     __proto__: PanelMenu.Button.prototype,
 
     _init: function(path) {
-        this._path = path;
         PanelMenu.Button.prototype._init.call(this, 0.0);
+        this._path = path;
+        Main.panel._menus.addMenu(this.menu);
+
         let label = new St.Label({ text: _f("Menu") });
         this.actor.add_actor(label);
 
