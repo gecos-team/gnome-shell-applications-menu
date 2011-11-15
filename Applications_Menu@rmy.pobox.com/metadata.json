@@ -1,5 +1,5 @@
 {
-    "shell-version": ["3.2.0"],
+    "shell-version": ["3.2"],
     "uuid": "Applications_Menu@rmy.pobox.com",
     "name": "Applications Menu",
     "description": "Replace Activities button with an Applications menu",
