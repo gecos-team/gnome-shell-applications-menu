@@ -329,17 +329,6 @@ function createSessionItems(menu) {
     menu.addMenuItem(item);
 }
 
-
-function notify(msg, details, isTransient) {
-    isTransient = typeof(isTransient) == 'boolean' ? isTransient : true;
-    let MessageTray = imports.ui.messageTray;
-    let source = new MessageTray.SystemNotificationSource();
-    Main.messageTray.add(source);
-    let notification = new MessageTray.Notification(source, msg, details);
-    notification.setTransient(isTransient);
-    source.notify(notification);
-}
-
 /**
  * Make the SuspendOrPowerOff shows the label "Power Off".
  */
