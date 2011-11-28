@@ -165,7 +165,7 @@ AppViewByCategories.prototype = {
                 if (this._showAll == true || !entry.get_app_info().get_nodisplay())
                     appList.push(app);
             } else if (nextType == GMenu.TreeItemType.DIRECTORY) {
-                this._load_applications(iter.get_directory());
+                this._load_applications(iter.get_directory(), appList);
             }
         }
     }
