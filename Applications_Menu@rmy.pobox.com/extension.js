@@ -238,14 +238,16 @@ ApplicationsMenuButton.prototype = {
             var category = categories[i];
             var apps = v.get_applications(category);
 
-            var submenu = new PopupMenu.PopupSubMenuMenuItem(category);
-            this.menu.addMenuItem(submenu);
+            if (apps.length > 0) {
+                var submenu = new PopupMenu.PopupSubMenuMenuItem(category);
+                this.menu.addMenuItem(submenu);
 
-            for (var j=0, al=apps.length; j<al; j++) {
+                for (var j=0, al=apps.length; j<al; j++) {
 
-                var app = apps[j];
-                var menuItem = new ApplicationMenuItem(app);
-                submenu.menu.addMenuItem(menuItem, 0);
+                    var app = apps[j];
+                    var menuItem = new ApplicationMenuItem(app);
+                    submenu.menu.addMenuItem(menuItem, 0);
+                }
             }
         }
 
