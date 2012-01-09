@@ -132,6 +132,10 @@ AppViewByCategories.prototype = {
         return this._applications[category];
     },
 
+    _appList_sort: function(a, b) {
+        return a.get_name() < b.get_name();
+    },
+
     _load_categories: function() {
 
         var tree = this._appSystem.get_tree();
@@ -145,6 +149,7 @@ AppViewByCategories.prototype = {
                 var appList = [];
                 var dir = iter.get_directory();
                 this._load_applications(dir, appList);
+                appList = appList.sort(this._appList_sort);
 
                 this._categories.push(dir.get_name());
                 this._applications[dir.get_name()] = appList;
